@@ -1,171 +1,192 @@
-/* goodbye - dead simple GTK/D-Bus shutdown dialog.
+/* farewell - shutdown dialog meant for systemd-operated linuces. Fork of `goodbye`
  * Copyright (C) 2012 Georg Reinke. All rights reserved.
+ * Copyright (C) 2015 Alexey Zhikhartsev. All rights reserved.
  *
  * See LICENSE for copying details.
  */
 
 #include <assert.h>
 #include <gtk/gtk.h>
-#include <gio/gio.h>
-#include <stdbool.h>
+#include <gdk/gdkkeysyms.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 /* The actions. */
 enum {
-	Shutdown = 0,
-	Reboot,
+	Reboot = 0,
+	Hibernate,
+	Shutdown,
 	Suspend,
-	Hibernate
+    ActionsCount_
 };
 
 /* The names of some things associated whith each button. */
 enum {
-	Destination = 0,
-	Object,
-	Interface,
-	Method,
+	Command = 0,
+    Arguments,
 	Label,
 	Icon
 };
 
-static const char* names[4][6] = {
+static const char* names[4][4] = {
 	[Shutdown] = {
-		[Destination] = "org.freedesktop.ConsoleKit",
-		[Object] = "/org/freedesktop/ConsoleKit/Manager",
-		[Interface] = "org.freedesktop.ConsoleKit.Manager",
-		[Method] = "Stop",
+		[Command] = "systemctl",
+        [Arguments] = "poweroff",
 		[Label] = "Shutdown",
 		[Icon] = "system-shutdown"
 	},
 	[Reboot] = {
-		[Destination] = "org.freedesktop.ConsoleKit",
-		[Object] = "/org/freedesktop/ConsoleKit/Manager",
-		[Interface] = "org.freedesktop.ConsoleKit.Manager",
-		[Method] = "Restart",
+        [Command] = "systemctl",
+        [Arguments] = "reboot",
 		[Label] = "Reboot", 
 		[Icon] = "system-restart"
 	},
 	[Suspend] = {
-		[Destination] = "org.freedesktop.UPower",
-		[Object] = "/org/freedesktop/UPower",
-		[Interface] = "org.freedesktop.UPower",
-		[Method] = "Suspend",
+        [Command] = "systemctl",
+        [Arguments] = "suspend",
 		[Label] = "Suspend",
 		[Icon] = "system-suspend"
 	},
 	[Hibernate] = {
-		[Destination] = "org.freedesktop.UPower",
-		[Object] = "/org/freedesktop/UPower",
-		[Interface] = "org.freedesktop.UPower",
-		[Method] = "Hibernate",
+        [Command] = "systemctl",
+        [Arguments] = "hibernate",
 		[Label] = "Hibernate",
 		[Icon] = "system-suspend-hibernate"
 	}
 };
 
-static bool verbose = false;
-
 void version(int exit_val) {
 	g_printerr("%s %s\n", PROGNAME, VERSION);
-	g_printerr("(C) 2012 Georg Reinke, see LICENSE for details\n");
 
 	exit(exit_val);
 }
 
 void usage(int exit_val) {
-	g_printerr("%s - dead simple GTK/D-Bus shutdown dialog\n", PROGNAME);
+	g_printerr("%s - simple shutdown dialog\n", PROGNAME);
 	g_printerr("USAGE: %s [OPTION]\n", PROGNAME);
 	g_printerr("OPTIONS:\n");
 	g_printerr("  -h|--help:    print this help\n");
-	g_printerr("  -v|--verbose: show some more information\n");
 	g_printerr("  --version:    show version and copyright notice\n");
 
 	exit(exit_val);
 }
 
-void handle_clicked(GtkWidget *widget, gpointer data) {
-	const char *dest = NULL, *path = NULL, *interface = NULL, *method = NULL;
-	int action = -1;
-	GDBusConnection *connection = NULL;
-	GDBusMessage *message = NULL, *reply = NULL;
-	GError *error = NULL;
-
-	action = GPOINTER_TO_INT(data);
-	assert(action >= 0 && action < sizeof(names));
-
-	dest = names[action][Destination];
-	path = names[action][Object];
-	interface = names[action][Interface];
-	method = names[action][Method];
-
-	/* get system bus */
-	connection = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &error);
-	if (!connection) {
-		g_printerr("Failed to connect to system bus: %s\n", error->message);
-		exit(1);
-	}
-
-	/* create message */
-	message = g_dbus_message_new_method_call(NULL, path, interface, method);
-	g_dbus_message_set_destination(message, dest);
-	if (verbose) {
-		gchar *status = g_dbus_message_print(message, 0);
-		g_printerr("sending following message:\n%s", status);
-		g_free(status);
-	}
-
-	/* send message */
-	reply = g_dbus_connection_send_message_with_reply_sync(connection, 
-			message, 0, -1, NULL, NULL, &error);
-
-	if (!reply) {
-		g_printerr("Failed to send message: %s\n", error->message);
-		exit(1);
-	} else if (verbose) {
-		gchar *status = g_dbus_message_print(reply, 0);
-		g_printerr("got response:\n%s", status);
-		g_free(status);
-	}
-
-	g_object_unref(message);
-	g_object_unref(connection);
+void execute(const char *command, const char *args)
+{
+    pid_t pid = fork();
+    if(pid == 0) // child
+    {
+        execlp(command, command, args, NULL);
+    }
+    else if(pid > 0) // parent
+    {
+    }
+    else if(pid == -1) // fork failed
+    {
+        perror("fork");
+    }
 	gtk_main_quit();
 }
 
-int main(int argc, char *argv[]) {
+void handle_clicked(GtkWidget *widget, gpointer data) {
+	int action = -1;
+
+	action = GPOINTER_TO_INT(data);
+	assert(action >= 0 && action < ActionsCount_);
+
+    execute(names[action][Command], names[action][Arguments]);
+}
+
+gboolean on_key_press(GtkWidget *widget, GdkEventKey *event, gpointer data)
+{
+    switch(event->keyval)
+    {
+        case GDK_KEY_Escape:
+            gtk_main_quit();
+            break;
+        default:
+            return FALSE;
+    }
+    return FALSE;
+}
+
+int main(int argc, char *argv[])
+{
 	GtkWidget *window, *box;
-	GtkWidget *buttons[4];
-	GtkWidget *icons[4];
+	GtkWidget *buttons[ActionsCount_];
+	GtkWidget *icons[ActionsCount_];
+    int buttonVisible[ActionsCount_] = {
+        [Shutdown] = 1
+        , [Reboot] = 1
+        , [Suspend] = 1
+        , [Hibernate] = 1};
 
 	gtk_init(&argc, &argv);
 
-	if (argc > 1) {
-		if (argc > 2) 
-			usage(1);
-		if (!strcmp(argv[1], "-h") || !strcmp(argv[1], "--help")) {
-			usage(0);
-		} else if (!strcmp(argv[1], "-v") || !strcmp(argv[1], "--verbose")) {
-			verbose = true;
-		} else if (!strcmp(argv[1], "--version")) {
-			version(0);
-		} else {
-			usage(1);
-		}
-	}
+    while(--argc)
+    {
+        if(!strcmp(argv[argc], "-h") || !strcmp(argv[argc], "--help"))
+        {
+            usage(0);
+        }
+        else if(!strcmp(argv[argc], "--version"))
+        {
+            version(0);
+        }
+        else if(!strcmp(argv[argc], "--noreboot"))
+        {
+            buttonVisible[Reboot] = 0;
+        }
+        else if(!strcmp(argv[argc], "--nohibernate"))
+        {
+            buttonVisible[Hibernate] = 0;
+        }
+        else if(!strcmp(argv[argc], "--noshutdown"))
+        {
+            buttonVisible[Shutdown] = 0;
+        }
+        else if(!strcmp(argv[argc], "--nosuspend"))
+        {
+            buttonVisible[Suspend] = 0;
+        }
+        else
+        {
+            usage(1);
+        }
+    }
+
+    /* curse if nothing is visible */
+    int oneVisible = 0;
+	for (int i = 0; i < ActionsCount_; ++i)
+    {
+        if(buttonVisible[i])
+        {
+            oneVisible = 1;
+            break;
+        }
+    }
+    if(!oneVisible)
+    {
+        g_printerr("At least one button should be visible\n");
+        exit(1);
+    }
 
 	/* create the window */
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-	gtk_window_set_title(GTK_WINDOW(window), "Goodbye");
+	gtk_window_set_title(GTK_WINDOW(window), "Farewell");
 	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
 	gtk_window_set_type_hint(GTK_WINDOW(window), GDK_WINDOW_TYPE_HINT_DIALOG);
 
 	/* create the buttons and their icons*/
-	for (int i = 0; i < 4; ++i) {
-		buttons[i] = gtk_button_new_with_label(names[i][Label]);
-		icons[i] = gtk_image_new_from_icon_name(names[i][Icon], 
-		GTK_ICON_SIZE_BUTTON);
-		gtk_button_set_image(GTK_BUTTON(buttons[i]), icons[i]);
+	for (int i = 0; i < ActionsCount_; ++i) {
+        if(buttonVisible[i])
+        {
+            buttons[i] = gtk_button_new_with_label(names[i][Label]);
+            gtk_button_set_always_show_image(GTK_BUTTON(buttons[i]), 1);
+            icons[i] = gtk_image_new_from_icon_name(names[i][Icon], GTK_ICON_SIZE_BUTTON);
+            gtk_button_set_image(GTK_BUTTON(buttons[i]), icons[i]);
+        }
 	}
 
 
@@ -176,17 +197,33 @@ int main(int argc, char *argv[]) {
 	box = gtk_hbutton_box_new();
 #endif /* USE_GTK3 */
 
-	for (int i = 0; i < 4; ++i) 
-		gtk_container_add(GTK_CONTAINER(box), buttons[i]);
+	for (int i = 0; i < ActionsCount_; ++i) 
+    {
+        if(buttonVisible[i])
+        {
+            gtk_container_add(GTK_CONTAINER(box), buttons[i]);
+        }
+    }
 
 	gtk_button_box_set_layout(GTK_BUTTON_BOX(box), GTK_BUTTONBOX_CENTER);
 	gtk_container_add(GTK_CONTAINER(window), box);
 
 	/* add the signals */
 	g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
-	for (int i = 0; i < 4; ++i)
-		g_signal_connect(buttons[i], "clicked", G_CALLBACK(handle_clicked),
-		                 GINT_TO_POINTER(i));
+	for (int i = 0; i < ActionsCount_; ++i)
+    {
+        if(buttonVisible[i])
+        {
+            g_signal_connect(buttons[i]
+                , "clicked"
+                , G_CALLBACK(handle_clicked)
+                , GINT_TO_POINTER(i));
+        }
+    }
+
+    /*add keys signals*/
+    g_signal_connect(G_OBJECT(window), "key_press_event",
+            G_CALLBACK(on_key_press), NULL);
 
 	/* show window and quit */
 	gtk_widget_show_all(window);
