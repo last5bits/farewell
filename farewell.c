@@ -74,13 +74,16 @@ void usage(int exit_val) {
 	g_printerr("%s - simple shutdown dialog\n", PROGNAME);
 	g_printerr("USAGE: %s [OPTION]\n", PROGNAME);
 	g_printerr("OPTIONS:\n");
-	g_printerr("  -h|--help:\tprint this help\n");
-	g_printerr("  --version:\tshow version and copyright notice\n");
-    g_printerr("  --noreboot\tdo not show \"Reboot\" button\n");
-    g_printerr("  --nohibernate\tdo not show \"Hibernate\" button\n");
-    g_printerr("  --noshutdown\tdo not show \"Shutdown\" button\n");
-    g_printerr("  --nosuspend\tdo not show \"Suspend\" button\n");
-    g_printerr("  --nohybrid\tdo not show \"Hybrid Sleep\" button\n");
+	g_printerr("  -h|--help:\t\tprint this help\n");
+	g_printerr("  --version:\t\tshow version and copyright notice\n");
+    g_printerr("  --buttons=list\tspecify buttons to show\n");
+    g_printerr("      r\t\"%s\"\n", names[Reboot][Label]);
+    g_printerr("      h\t\"%s\"\n", names[Hibernate][Label]);
+    g_printerr("      H\t\"%s\"\n", names[HybridSleep][Label]);
+    g_printerr("      s\t\"%s\"\n", names[Shutdown][Label]);
+    g_printerr("      S\t\"%s\"\n", names[Suspend][Label]);
+    g_printerr("      e.g., --buttons=rshH");
+    g_printerr("\n");
 
 	exit(exit_val);
 }
