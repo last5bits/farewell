@@ -15,9 +15,10 @@
 /* The actions. */
 enum {
 	Reboot = 0,
+    HybridSleep,
 	Hibernate,
-	Shutdown,
 	Suspend,
+	Shutdown,
     ActionsCount_
 };
 
@@ -29,7 +30,7 @@ enum {
 	Icon
 };
 
-static const char* names[4][4] = {
+static const char* names[5][4] = {
 	[Shutdown] = {
 		[Command] = "systemctl",
         [Arguments] = "poweroff",
@@ -52,6 +53,12 @@ static const char* names[4][4] = {
         [Command] = "systemctl",
         [Arguments] = "hibernate",
 		[Label] = "Hibernate",
+		[Icon] = "system-hibernate"
+	},
+	[HybridSleep] = {
+        [Command] = "systemctl",
+        [Arguments] = "hybrid-sleep",
+		[Label] = "Hybrid Sleep",
 		[Icon] = "system-suspend-hibernate"
 	}
 };
@@ -66,8 +73,13 @@ void usage(int exit_val) {
 	g_printerr("%s - simple shutdown dialog\n", PROGNAME);
 	g_printerr("USAGE: %s [OPTION]\n", PROGNAME);
 	g_printerr("OPTIONS:\n");
-	g_printerr("  -h|--help:    print this help\n");
-	g_printerr("  --version:    show version and copyright notice\n");
+	g_printerr("  -h|--help:\tprint this help\n");
+	g_printerr("  --version:\tshow version and copyright notice\n");
+    g_printerr("  --noreboot\tdo not show \"Reboot\" button\n");
+    g_printerr("  --nohibernate\tdo not show \"Hibernate\" button\n");
+    g_printerr("  --noshutdown\tdo not show \"Shutdown\" button\n");
+    g_printerr("  --nosuspend\tdo not show \"Suspend\" button\n");
+    g_printerr("  --nohybrid\tdo not show \"Hybrid Sleep\" button\n");
 
 	exit(exit_val);
 }
@@ -120,7 +132,8 @@ int main(int argc, char *argv[])
         [Shutdown] = 1
         , [Reboot] = 1
         , [Suspend] = 1
-        , [Hibernate] = 1};
+        , [Hibernate] = 1
+        , [HybridSleep] = 1};
 
 	gtk_init(&argc, &argv);
 
@@ -149,6 +162,10 @@ int main(int argc, char *argv[])
         else if(!strcmp(argv[argc], "--nosuspend"))
         {
             buttonVisible[Suspend] = 0;
+        }
+        else if(!strcmp(argv[argc], "--nohybrid-sleep"))
+        {
+            buttonVisible[HybridSleep] = 0;
         }
         else
         {
