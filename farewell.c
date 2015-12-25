@@ -127,7 +127,9 @@ gboolean on_key_press(GtkWidget *widget, GdkEventKey *event, gpointer data)
     return FALSE;
 }
 
-gboolean parseButtonString(const char *str, int *buttons)
+/*Parses str, puts result into buttons, returns # of buttons*/
+/*if fails, returns -1*/
+int parseButtonString(const char *str, int *buttons)
 {
     /*skip everything until and including '=' */
     while(*str && *str++ != '=')
@@ -142,11 +144,12 @@ gboolean parseButtonString(const char *str, int *buttons)
 
     assert(g_hash_table_size(table) == ActionsCount_);
 
+    int buttonCount = 0;
     while(*str)
     {
         if(!g_hash_table_contains(table, GINT_TO_POINTER(*str)))
         {
-            return FALSE;
+            return -1;
         }
 
         int action = GPOINTER_TO_INT(g_hash_table_lookup(table, GINT_TO_POINTER(*str)));
@@ -154,9 +157,10 @@ gboolean parseButtonString(const char *str, int *buttons)
 
         str++;
         buttons++;
+        buttonCount++;
     }
 
-    return TRUE;
+    return buttonCount;
 }
 
 int main(int argc, char *argv[])
@@ -167,7 +171,13 @@ int main(int argc, char *argv[])
 
     /*Designated Initializers*/
     /*http://gcc.gnu.org/onlinedocs/gcc/Designated-Inits.html*/
-    int buttonsToShow[ActionsCount_] = {[0 ... ActionsCount_ - 1] = -1};
+    /*int buttonsToShow[ActionsCount_] = {[0 ... ActionsCount_ - 1] = -1};*/
+
+    int buttonsToShow[] = {Reboot, Shutdown, Hibernate, HybridSleep, -1};
+    /*g_print("%d", sizeof(buttonsToShow) / sizeof(buttonsToShow[0]));*/
+    assert(sizeof(buttonsToShow) / sizeof(buttonsToShow[0]) == ActionsCount_);
+
+    int buttonsCount = 4;
 
     gtk_init(&argc, &argv);
 
@@ -184,8 +194,8 @@ int main(int argc, char *argv[])
         }
         else if(!strncmp(argv[argc], strButtons, strlen(strButtons)))
         {
-            gboolean ok = parseButtonString(argv[argc], buttonsToShow);
-            if(!ok)
+            buttonsCount = parseButtonString(argv[argc], buttonsToShow);
+            if(buttonsCount == -1 || buttonsCount == 0 || buttonsCount > ActionsCount_)
             {
                 usage(1);
             }
@@ -219,12 +229,8 @@ int main(int argc, char *argv[])
     gtk_window_set_type_hint(GTK_WINDOW(window), GDK_WINDOW_TYPE_HINT_DIALOG);
 
     /* create the buttons and their icons*/
-    for (int i = 0; i < ActionsCount_; ++i) {
+    for (int i = 0; i < buttonsCount; ++i) {
         int action = buttonsToShow[i];
-        if(action == -1)
-        {
-            break;
-        }
 
         buttons[i] = gtk_button_new_with_label(names[action][Label]);
         gtk_button_set_always_show_image(GTK_BUTTON(buttons[i]), 1);
@@ -239,13 +245,8 @@ int main(int argc, char *argv[])
     box = gtk_hbutton_box_new();
 #endif /* USE_GTK3 */
 
-    for (int i = 0; i < ActionsCount_; ++i) 
+    for (int i = 0; i < buttonsCount; ++i) 
     {
-        if(!buttons[i])
-        {
-            break;
-        }
-
         gtk_container_add(GTK_CONTAINER(box), buttons[i]);
     }
 
@@ -254,13 +255,8 @@ int main(int argc, char *argv[])
 
     /* add the signals */
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
-    for (int i = 0; i < ActionsCount_; ++i)
+    for (int i = 0; i < buttonsCount; ++i)
     {
-        if(!buttons[i])
-        {
-            break;
-        }
-
         g_signal_connect(buttons[i]
             , "clicked"
             , G_CALLBACK(handle_clicked)
