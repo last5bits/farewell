@@ -15,67 +15,67 @@
 
 /* The actions. */
 enum {
-	Reboot = 0,
+    Reboot = 0,
     HybridSleep,
-	Hibernate,
-	Suspend,
-	Shutdown,
+    Hibernate,
+    Suspend,
+    Shutdown,
     ActionsCount_
 };
 
 /* The names of some things associated whith each button. */
 enum {
-	Command = 0,
+    Command = 0,
     Arguments,
-	Label,
-	Icon
+    Label,
+    Icon
 };
 
 static const char* names[5][4] = {
-	[Shutdown] = {
-		[Command] = "systemctl",
+    [Shutdown] = {
+        [Command] = "systemctl",
         [Arguments] = "poweroff",
-		[Label] = "Shutdown",
-		[Icon] = "system-shutdown"
-	},
-	[Reboot] = {
+        [Label] = "Shutdown",
+        [Icon] = "system-shutdown"
+    },
+    [Reboot] = {
         [Command] = "systemctl",
         [Arguments] = "reboot",
-		[Label] = "Reboot", 
-		[Icon] = "system-restart"
-	},
-	[Suspend] = {
+        [Label] = "Reboot", 
+        [Icon] = "system-restart"
+    },
+    [Suspend] = {
         [Command] = "systemctl",
         [Arguments] = "suspend",
-		[Label] = "Suspend",
-		[Icon] = "system-suspend"
-	},
-	[Hibernate] = {
+        [Label] = "Suspend",
+        [Icon] = "system-suspend"
+    },
+    [Hibernate] = {
         [Command] = "systemctl",
         [Arguments] = "hibernate",
-		[Label] = "Hibernate",
-		[Icon] = "system-hibernate"
-	},
-	[HybridSleep] = {
+        [Label] = "Hibernate",
+        [Icon] = "system-hibernate"
+    },
+    [HybridSleep] = {
         [Command] = "systemctl",
         [Arguments] = "hybrid-sleep",
-		[Label] = "Hybrid Sleep",
-		[Icon] = "system-suspend-hibernate"
-	}
+        [Label] = "Hybrid Sleep",
+        [Icon] = "system-suspend-hibernate"
+    }
 };
 
 void version(int exit_val) {
-	g_printerr("%s %s\n", PROGNAME, VERSION);
+    g_printerr("%s %s\n", PROGNAME, VERSION);
 
-	exit(exit_val);
+    exit(exit_val);
 }
 
 void usage(int exit_val) {
-	g_printerr("%s - simple shutdown dialog\n", PROGNAME);
-	g_printerr("USAGE: %s [OPTION]\n", PROGNAME);
-	g_printerr("OPTIONS:\n");
-	g_printerr("  -h|--help:\t\tprint this help\n");
-	g_printerr("  --version:\t\tshow version and copyright notice\n");
+    g_printerr("%s - simple shutdown dialog\n", PROGNAME);
+    g_printerr("USAGE: %s [OPTION]\n", PROGNAME);
+    g_printerr("OPTIONS:\n");
+    g_printerr("  -h|--help:\t\tprint this help\n");
+    g_printerr("  --version:\t\tshow version and copyright notice\n");
     g_printerr("  --buttons=list\tspecify buttons to show\n");
     g_printerr("      r\t\"%s\"\n", names[Reboot][Label]);
     g_printerr("      h\t\"%s\"\n", names[Hibernate][Label]);
@@ -85,7 +85,7 @@ void usage(int exit_val) {
     g_printerr("      e.g., --buttons=rshH");
     g_printerr("\n");
 
-	exit(exit_val);
+    exit(exit_val);
 }
 
 void execute(const char *command, const char *args)
@@ -102,14 +102,14 @@ void execute(const char *command, const char *args)
     {
         perror("fork");
     }
-	gtk_main_quit();
+    gtk_main_quit();
 }
 
 void handle_clicked(GtkWidget *widget, gpointer data) {
-	int action = -1;
+    int action = -1;
 
-	action = GPOINTER_TO_INT(data);
-	assert(action >= 0 && action < ActionsCount_);
+    action = GPOINTER_TO_INT(data);
+    assert(action >= 0 && action < ActionsCount_);
 
     execute(names[action][Command], names[action][Arguments]);
 }
@@ -161,15 +161,15 @@ gboolean parseButtonString(const char *str, int *buttons)
 
 int main(int argc, char *argv[])
 {
-	GtkWidget *window, *box;
-	GtkWidget *buttons[ActionsCount_] = {NULL};
-	GtkWidget *icons[ActionsCount_];
+    GtkWidget *window, *box;
+    GtkWidget *buttons[ActionsCount_] = {NULL};
+    GtkWidget *icons[ActionsCount_];
 
     /*Designated Initializers*/
     /*http://gcc.gnu.org/onlinedocs/gcc/Designated-Inits.html*/
     int buttonsToShow[ActionsCount_] = {[0 ... ActionsCount_ - 1] = -1};
 
-	gtk_init(&argc, &argv);
+    gtk_init(&argc, &argv);
 
     while(--argc)
     {
@@ -198,7 +198,7 @@ int main(int argc, char *argv[])
 
     /* curse if nothing is visible */
     int oneVisible = 0;
-	for (int i = 0; i < ActionsCount_; ++i)
+    for (int i = 0; i < ActionsCount_; ++i)
     {
         if(buttonsToShow[i] != -1)
         {
@@ -212,14 +212,14 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-	/* create the window */
-	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-	gtk_window_set_title(GTK_WINDOW(window), "Farewell");
-	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
-	gtk_window_set_type_hint(GTK_WINDOW(window), GDK_WINDOW_TYPE_HINT_DIALOG);
+    /* create the window */
+    window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(window), "Farewell");
+    gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
+    gtk_window_set_type_hint(GTK_WINDOW(window), GDK_WINDOW_TYPE_HINT_DIALOG);
 
-	/* create the buttons and their icons*/
-	for (int i = 0; i < ActionsCount_; ++i) {
+    /* create the buttons and their icons*/
+    for (int i = 0; i < ActionsCount_; ++i) {
         int action = buttonsToShow[i];
         if(action == -1)
         {
@@ -230,16 +230,16 @@ int main(int argc, char *argv[])
         gtk_button_set_always_show_image(GTK_BUTTON(buttons[i]), 1);
         icons[i] = gtk_image_new_from_icon_name(names[action][Icon], GTK_ICON_SIZE_BUTTON);
         gtk_button_set_image(GTK_BUTTON(buttons[i]), icons[i]);
-	}
+    }
 
-	/* create the box */
+    /* create the box */
 #ifdef USE_GTK3
-	box = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
+    box = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
 #else
-	box = gtk_hbutton_box_new();
+    box = gtk_hbutton_box_new();
 #endif /* USE_GTK3 */
 
-	for (int i = 0; i < ActionsCount_; ++i) 
+    for (int i = 0; i < ActionsCount_; ++i) 
     {
         if(!buttons[i])
         {
@@ -249,12 +249,12 @@ int main(int argc, char *argv[])
         gtk_container_add(GTK_CONTAINER(box), buttons[i]);
     }
 
-	gtk_button_box_set_layout(GTK_BUTTON_BOX(box), GTK_BUTTONBOX_CENTER);
-	gtk_container_add(GTK_CONTAINER(window), box);
+    gtk_button_box_set_layout(GTK_BUTTON_BOX(box), GTK_BUTTONBOX_CENTER);
+    gtk_container_add(GTK_CONTAINER(window), box);
 
-	/* add the signals */
-	g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
-	for (int i = 0; i < ActionsCount_; ++i)
+    /* add the signals */
+    g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
+    for (int i = 0; i < ActionsCount_; ++i)
     {
         if(!buttons[i])
         {
@@ -271,9 +271,9 @@ int main(int argc, char *argv[])
     g_signal_connect(G_OBJECT(window), "key_press_event",
             G_CALLBACK(on_key_press), NULL);
 
-	/* show window and quit */
-	gtk_widget_show_all(window);
-	gtk_main();
+    /* show window and quit */
+    gtk_widget_show_all(window);
+    gtk_main();
 
-	return 0;
+    return 0;
 }
