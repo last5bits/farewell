@@ -12,7 +12,7 @@ CFLAGS   := `pkg-config --cflags gtk+-3.0`
 LDFLAGS  := `pkg-config --cflags --libs gtk+-3.0`
 CPPFLAGS := -DUSE_GTK3
 
-CFLAGS += -Wall -pedantic -g -std=c99
+CFLAGS += -Wall -g -std=c99
 CPPFLAGS += -DVERSION=\"$(VERSION)\" -DPROGNAME=\"$(TARGET)\"
 LDFLAGS += -Wall -pedantic -g -std=c99
 
