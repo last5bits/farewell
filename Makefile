@@ -19,7 +19,9 @@ clean:
 	@rm -f $(TARGET) $(OBJ)
 
 install:
+	@echo "INSTALL -d $(PREFIX)/bin"
+	@install -d $(PREFIX)/bin 
 	@echo "INSTALL $(TARGET) $(PREFIX)/bin"
-	@install -m 755 -t $(PREFIX)/bin $(TARGET) 
+	@install -m 755 $(TARGET) $(PREFIX)/bin 
 
 .PHONY: all options clean install
