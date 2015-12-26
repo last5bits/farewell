@@ -20,6 +20,6 @@ clean:
 
 install:
 	@echo "INSTALL $(TARGET) $(PREFIX)/bin"
-	@install -m 755 $(TARGET) $(PREFIX)/bin
+	@install -m 755 -t $(PREFIX)/bin $(TARGET) 
 
 .PHONY: all options clean install
