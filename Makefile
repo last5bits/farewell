@@ -19,8 +19,6 @@ clean:
 	@rm -f $(TARGET) $(OBJ)
 
 install:
-	@echo "MKDIR $(PREFIX)/bin"
-	@mkdir -p $(PREFIX)/bin
 	@echo "INSTALL $(TARGET) $(PREFIX)/bin"
 	@install -m 755 $(TARGET) $(PREFIX)/bin
 
