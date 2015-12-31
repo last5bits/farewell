@@ -64,6 +64,8 @@ static const char* names[5][4] = {
     }
 };
 
+int buttonsToShow[] = {Reboot, Shutdown, Hibernate, HybridSleep, -1};
+
 void version(int exit_val) {
     g_printerr("%s %s\n", PROGNAME, VERSION);
 
@@ -106,9 +108,8 @@ void execute(const char *command, const char *args)
 }
 
 void handle_clicked(GtkWidget *widget, gpointer data) {
-    int action = -1;
+    int action = buttonsToShow[GPOINTER_TO_INT(data)];
 
-    action = GPOINTER_TO_INT(data);
     assert(action >= 0 && action < ActionsCount_);
 
     execute(names[action][Command], names[action][Arguments]);
@@ -172,9 +173,6 @@ int main(int argc, char *argv[])
     /*Designated Initializers*/
     /*http://gcc.gnu.org/onlinedocs/gcc/Designated-Inits.html*/
     /*int buttonsToShow[ActionsCount_] = {[0 ... ActionsCount_ - 1] = -1};*/
-
-    int buttonsToShow[] = {Reboot, Shutdown, Hibernate, HybridSleep, -1};
-    /*g_print("%d", sizeof(buttonsToShow) / sizeof(buttonsToShow[0]));*/
     assert(sizeof(buttonsToShow) / sizeof(buttonsToShow[0]) == ActionsCount_);
 
     int buttonsCount = 4;
